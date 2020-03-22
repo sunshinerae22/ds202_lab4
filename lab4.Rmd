@@ -15,12 +15,12 @@ library(readxl)
 library(dplyr)
 library(tidyverse)
 
-defense <- read_excel("cyclonesFootball2019 (1).xlsx", sheet="Defensive")
+defense <- read_excel("cyclonesFootball2019.xlsx", sheet="Defensive")
 str(defense)
 
-offensive <-read_excel("cyclonesFootball2019 (1).xlsx", sheet="Offensive")
+offensive <-read_excel("cyclonesFootball2019.xlsx", sheet="Offensive")
 
-biography <-read_excel("cyclonesFootball2019 (1).xlsx", sheet="Biography")
+biography <-read_excel("cyclonesFootball2019.xlsx", sheet="Biography")
 
 cols.num <- c("Tackles_Solo","Tackles_ASST", "Tackles_TFL","Tackles_Sack", "Turnover_FF","Turnover_FR","Turnover_INT", "Pass_QBH", "Pass_PB")
 
@@ -61,3 +61,58 @@ View(bioClean)
 str(bioClean)
 
 ```
+
+Part 2
+1)
+```{r}
+defClean %>% pivot_longer(Tackles_Solo:Pass_PB,
+    names_to= 'Statistic')
+```
+2)
+```{r}
+ggplot(defclean, aes(value)) + geom_histogram() + facet_wrap(~Statistics)
+```
+
+It looks like tackles_Sacks, Turnover_FF, Turnover_FR and Turnover_INT are pretty rare.
+
+3)
+```{r}
+defClean %>% pivot_wider %>%(names_from ='Name', values_from = 'Opponent_Opponent') +
+  ggplot(defClean, aes(x= Tackles_Solo %in% 'Kansas City', y= Tackles_Solo %in% 'West Virginia')) + geom_point()
+```
+
+Part 3
+1)
+```{r}
+bioClean <- bioClean  %>% separate(col = Hometown, into = c('Town','State'), sep = ',')
+
+print(bioClean)
+```
+
+2)
+```{r}
+bioClean %>% ggplot(aes(State)) + geom_bar()
+```
+
+Part 3
+
+1)
+```{r}
+offBioClean <- left_join(bioClean, offClean, id = 'Name')
+
+offBioClean %>% ggplot(aes(State)) + geom_bar()
+```
+
+2)
+```{r}
+offBioClean %>% ggplot(aes(x= Receiving_YDS, y = Weight)) + geom_point() + facet_wrap(~Opponent_Opponent)
+```
+It really doesn't look like there's much of a relationship between weight and recieving yards. There's way too many other factors you would need to look at to make this data mean anything.
+
+3)
+```{r}
+offBioClean %>% pivot_longer(Rushing_ATT:Passing_INT, names_to = 'Statistic') %>% ggplot(aes(x = Statistic, y = Position)) + geom_point() + facet_wrap(~Opponent_Opponent)
+```
+
+4)
+
