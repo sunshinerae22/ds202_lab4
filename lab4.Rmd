@@ -1,0 +1,63 @@
+---
+title: "lab4"
+author: "Britt Bovbjerg"
+date: "3/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Data Cleaning: 
+```{r}
+library(readxl)
+library(dplyr)
+library(tidyverse)
+
+defense <- read_excel("cyclonesFootball2019 (1).xlsx", sheet="Defensive")
+str(defense)
+
+offensive <-read_excel("cyclonesFootball2019 (1).xlsx", sheet="Offensive")
+
+biography <-read_excel("cyclonesFootball2019 (1).xlsx", sheet="Biography")
+
+cols.num <- c("Tackles_Solo","Tackles_ASST", "Tackles_TFL","Tackles_Sack", "Turnover_FF","Turnover_FR","Turnover_INT", "Pass_QBH", "Pass_PB")
+
+defense[cols.num] <- sapply(defense[cols.num],as.numeric)
+
+defClean <- defense
+
+defClean$Name <- as.factor(defClean$Name)
+
+defClean$Opponent_Opponent <-as.factor(defClean$Opponent_Opponent)
+            
+str(defClean)
+
+
+cols.num1 <- c("Rushing_ATT","Rushing_YDS", "Rushing_TD","Receiving_REC", "Receiving_YDS","Receiving_TD","Passing_CMP-ATT", "Passing_YDS", "Passing_TD", "Passing_INT")
+offensive[cols.num1] <- sapply(offensive[cols.num1],as.numeric)
+
+offClean <- offensive
+
+offClean$Name <- as.factor(offClean$Name)
+
+offClean$Opponent_Opponent <- as.factor(offClean$Opponent_Opponent)
+
+str(offClean)
+
+bioClean <- biography
+bioClean$Name <- as.factor(bioClean$Name)
+bioClean$Weight <- as.numeric(bioClean$Weight)
+
+bioClean <- bioClean %>% 
+  separate (col = Height, into= c("Feet", "Inches"),sep='-') %>%
+  mutate_at(.vars = vars(Feet, Inches),
+            .fun = funs(as.numeric))
+  
+
+
+View(bioClean)
+str(bioClean)
+
+```
