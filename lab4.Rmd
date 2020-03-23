@@ -31,11 +31,14 @@ defClean <- defense
 defClean$Name <- as.factor(defClean$Name)
 
 defClean$Opponent_Opponent <-as.factor(defClean$Opponent_Opponent)
-            
+
 str(defClean)
+```
 
-
+```{r}
+            
 cols.num1 <- c("Rushing_ATT","Rushing_YDS", "Rushing_TD","Receiving_REC", "Receiving_YDS","Receiving_TD","Passing_CMP-ATT", "Passing_YDS", "Passing_TD", "Passing_INT")
+
 offensive[cols.num1] <- sapply(offensive[cols.num1],as.numeric)
 
 offClean <- offensive
@@ -45,74 +48,114 @@ offClean$Name <- as.factor(offClean$Name)
 offClean$Opponent_Opponent <- as.factor(offClean$Opponent_Opponent)
 
 str(offClean)
+```
+
+```{r}
 
 bioClean <- biography
+
 bioClean$Name <- as.factor(bioClean$Name)
+
 bioClean$Weight <- as.numeric(bioClean$Weight)
 
 bioClean <- bioClean %>% 
   separate (col = Height, into= c("Feet", "Inches"),sep='-') %>%
   mutate_at(.vars = vars(Feet, Inches),
             .fun = funs(as.numeric))
-  
-
-
-View(bioClean)
-str(bioClean)
+ 
+ bioClean$Heigth <- bioClean$Feet*12 + bioClean$Inches
+ 
+ str(bioClean)
 
 ```
 
 Part 2
 1)
 ```{r}
-defClean %>% pivot_longer(Tackles_Solo:Pass_PB,
-    names_to= 'Statistic')
+defCleanLong <- defClean %>% pivot_longer(Tackles_Solo:Pass_PB,
+    names_to= 'Statistic', values_to="value")
+
+defCleanLong
 ```
 2)
 ```{r}
-ggplot(defclean, aes(value)) + geom_histogram() + facet_wrap(~Statistics)
+ggplot(defCleanLong, aes(x = value)) + geom_histogram(binwidth = .25)  + facet_wrap(~Statistic)
 ```
 
 It looks like tackles_Sacks, Turnover_FF, Turnover_FR and Turnover_INT are pretty rare.
 
 3)
 ```{r}
-defClean %>% pivot_wider %>%(names_from ='Name', values_from = 'Opponent_Opponent') +
-  ggplot(defClean, aes(x= Tackles_Solo %in% 'Kansas City', y= Tackles_Solo %in% 'West Virginia')) + geom_point()
-```
 
-Part 3
+defCleanLong <- defCleanLong %>% 
+  filter(Statistic == 'Tackles_Solo') %>%   
+  filter(Opponent_Opponent == 'West Virginia' | Opponent_Opponent == 'Kansas State') %>% pivot_wider(names_from='Opponent_Opponent', values_from='value') %>% 
+  rename(West_Virginia = 'West Virginia', Kansas_State = 'Kansas State')
+
+defCleanLong %>% ggplot(aes(x=Kansas_State, y=West_Virginia)) + geom_point()
+
+```
+The graph doesn't show any signiciant pattern, meaning the team did about as well against Kansas_State as they did against West_Virgina 
+
+Part 2
 1)
 ```{r}
-bioClean <- bioClean  %>% separate(col = Hometown, into = c('Town','State'), sep = ',')
+bioClean2 <- bioClean  %>% 
+  separate(col = Hometown, into = c('City','State'), sep = ',')
 
-print(bioClean)
+head(bioClean2)
 ```
 
 2)
 ```{r}
-bioClean %>% ggplot(aes(State)) + geom_bar()
+bioClean2 %>% ggplot(aes(State)) + geom_bar()
+
+table(bioClean2$State)
+
 ```
 
 Part 3
 
 1)
 ```{r}
-offBioClean <- left_join(bioClean, offClean, id = 'Name')
+offBioClean <- left_join(bioClean2, offClean, id = 'Name')
 
 offBioClean %>% ggplot(aes(State)) + geom_bar()
+
+table(offBioClean$State)
 ```
 
 2)
 ```{r}
-offBioClean %>% ggplot(aes(x= Receiving_YDS, y = Weight)) + geom_point() + facet_wrap(~Opponent_Opponent)
+offBioClean %>% 
+  filter(!is.na(Opponent_Opponent)) %>%
+  ggplot(aes(x= Weight, y = Receiving_YDS)) + geom_point(na.rm = TRUE) + facet_wrap(~Opponent_Opponent)
 ```
 It really doesn't look like there's much of a relationship between weight and recieving yards. There's way too many other factors you would need to look at to make this data mean anything.
 
 3)
+
 ```{r}
-offBioClean %>% pivot_longer(Rushing_ATT:Passing_INT, names_to = 'Statistic') %>% ggplot(aes(x = Statistic, y = Position)) + geom_point() + facet_wrap(~Opponent_Opponent)
+offBioCleanLong <- offBioClean %>%
+  filter(!is.na(Opponent_Opponent)) %>%
+  pivot_longer(Rushing_YDS:Rushing_TD,
+    names_to= 'Statistic', values_to="value") 
+  
+  offBioCleanLong %>%
+      filter(Name != 'Purdy, Brock')  %>%
+      ggplot( aes(x=Opponent_Opponent, y=value))+geom_boxplot()+coord_flip() + facet_grid(~Statistic)
 ```
 
-4)
+```{r}
+offBioCleanLong %>%
+filter(Name == 'Purdy, Brock') %>% 
+ggplot(aes(x=Opponent_Opponent, y=value))+geom_point()+coord_flip() + facet_grid(~Statistic)
+```
+It looks like Brock Purdy is bettter than the other players at Rushing Yards, but about the same for Rushing_TD. 
 
+4) We wanted to see if weight varied by the state that the player comes from. 
+```{r}
+ggplot(bioClean2, aes(x=State, y=Weight)) + geom_boxplot()
+
+```
+It seems like it doesbecause the means vary quite a bit, with the highest being Illinois and the lowest being Minnasota. 
